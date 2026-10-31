@@ -1,0 +1,58 @@
+// Standalone showcase excerpt of the access-control models from schema.prisma.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum AdminRole {
+  admin
+  super_admin
+}
+
+enum AdminRating {
+  low
+  average
+  good
+  outstanding
+}
+
+model AdminUser {
+  id           String         @id @default(uuid())
+  username     String         @unique
+  passwordHash String
+  role         AdminRole      @default(admin)
+  rating       AdminRating?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  sessions     AdminSession[]
+  auditLogs    AuditLog[]
+}
+
+model AuditLog {
+  id         String     @id @default(uuid())
+  userId     String?
+  user       AdminUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  username   String
+  action     String
+  entityType String
+  entityId   String?
+  summary    String
+  createdAt  DateTime   @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model AdminSession {
+  id        String    @id @default(uuid())
+  userId    String
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
